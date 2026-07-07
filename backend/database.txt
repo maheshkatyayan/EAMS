@@ -1,0 +1,334 @@
+-- =========================
+-- ENUM TYPES
+-- =========================
+
+CREATE TYPE role_enum AS ENUM (
+    'employee',
+    'manager',
+    'hr',
+    'super_admin'
+);
+
+CREATE TYPE attendance_status_enum AS ENUM (
+    'present',
+    'absent',
+    'half_day',
+    'on_leave',
+    'holiday'
+);
+
+CREATE TYPE leave_status_enum AS ENUM (
+    'pending',
+    'approved',
+    'rejected',
+    'cancelled'
+);
+
+CREATE TYPE log_type_enum AS ENUM (
+    'check_in',
+    'check_out'
+);
+
+
+-- =========================
+-- DEPARTMENTS
+-- =========================
+
+CREATE TABLE departments (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) UNIQUE NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- =========================
+-- EMPLOYEES
+-- =========================
+
+CREATE TABLE employees (
+    id SERIAL PRIMARY KEY,
+
+    emp_code VARCHAR(20) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+
+    password_hash VARCHAR(255) NOT NULL,
+
+    first_name VARCHAR(80) NOT NULL,
+    last_name VARCHAR(80) DEFAULT '',
+
+    phone VARCHAR(20),
+
+    role role_enum DEFAULT 'employee',
+
+    designation VARCHAR(100),
+
+    department_id INTEGER
+        REFERENCES departments(id)
+        ON DELETE SET NULL,
+
+    manager_id INTEGER
+        REFERENCES employees(id)
+        ON DELETE SET NULL,
+
+    date_joined DATE DEFAULT CURRENT_DATE,
+
+    is_active BOOLEAN DEFAULT TRUE,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+CREATE INDEX idx_employee_code
+ON employees(emp_code);
+
+CREATE INDEX idx_employee_email
+ON employees(email);
+
+
+
+-- =========================
+-- ATTENDANCE
+-- =========================
+
+CREATE TABLE attendance (
+    id SERIAL PRIMARY KEY,
+
+    employee_id INTEGER NOT NULL
+        REFERENCES employees(id)
+        ON DELETE CASCADE,
+
+    date DATE NOT NULL,
+
+    check_in TIMESTAMP,
+
+    check_out TIMESTAMP,
+
+    working_hours FLOAT DEFAULT 0,
+
+    overtime_hours FLOAT DEFAULT 0,
+
+    is_late BOOLEAN DEFAULT FALSE,
+
+    early_exit BOOLEAN DEFAULT FALSE,
+
+    status attendance_status_enum DEFAULT 'absent',
+
+    CONSTRAINT uq_employee_date
+    UNIQUE(employee_id,date)
+);
+
+
+CREATE INDEX idx_attendance_employee
+ON attendance(employee_id);
+
+
+
+-- =========================
+-- ATTENDANCE LOGS
+-- =========================
+
+CREATE TABLE attendance_logs (
+
+    id SERIAL PRIMARY KEY,
+
+    employee_id INTEGER NOT NULL
+        REFERENCES employees(id)
+        ON DELETE CASCADE,
+
+    log_type log_type_enum NOT NULL,
+
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    latitude FLOAT,
+
+    longitude FLOAT,
+
+    ip_address VARCHAR(45),
+
+    device_info VARCHAR(255)
+);
+
+
+
+CREATE INDEX idx_logs_employee
+ON attendance_logs(employee_id);
+
+
+
+-- =========================
+-- LEAVE TYPES
+-- =========================
+
+CREATE TABLE leave_types (
+
+    id SERIAL PRIMARY KEY,
+
+    name VARCHAR(50) UNIQUE NOT NULL,
+
+    annual_quota INTEGER DEFAULT 12,
+
+    is_paid BOOLEAN DEFAULT TRUE
+);
+
+
+
+-- =========================
+-- LEAVE REQUESTS
+-- =========================
+
+CREATE TABLE leave_requests (
+
+    id SERIAL PRIMARY KEY,
+
+    employee_id INTEGER NOT NULL
+        REFERENCES employees(id)
+        ON DELETE CASCADE,
+
+    leave_type_id INTEGER NOT NULL
+        REFERENCES leave_types(id)
+        ON DELETE CASCADE,
+
+
+    start_date DATE NOT NULL,
+
+    end_date DATE NOT NULL,
+
+    days FLOAT NOT NULL,
+
+    reason TEXT,
+
+
+    status leave_status_enum DEFAULT 'pending',
+
+
+    reviewed_by INTEGER
+        REFERENCES employees(id)
+        ON DELETE SET NULL,
+
+
+    review_note TEXT,
+
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    reviewed_at TIMESTAMP
+);
+
+
+
+CREATE INDEX idx_leave_employee
+ON leave_requests(employee_id);
+
+
+
+-- =========================
+-- HOLIDAYS
+-- =========================
+
+CREATE TABLE holidays (
+
+    id SERIAL PRIMARY KEY,
+
+    name VARCHAR(100) NOT NULL,
+
+    date DATE UNIQUE NOT NULL
+);
+
+
+
+-- =========================
+-- NOTIFICATIONS
+-- =========================
+
+CREATE TABLE notifications (
+
+    id SERIAL PRIMARY KEY,
+
+    employee_id INTEGER NOT NULL
+        REFERENCES employees(id)
+        ON DELETE CASCADE,
+
+
+    title VARCHAR(150) NOT NULL,
+
+    body TEXT,
+
+    is_read BOOLEAN DEFAULT FALSE,
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+-- =========================
+-- AUDIT LOGS
+-- =========================
+
+CREATE TABLE audit_logs (
+
+    id SERIAL PRIMARY KEY,
+
+    actor_id INTEGER
+        REFERENCES employees(id)
+        ON DELETE SET NULL,
+
+
+    action VARCHAR(100) NOT NULL,
+
+    entity VARCHAR(50),
+
+    entity_id INTEGER,
+
+
+    detail JSONB,
+
+
+    ip_address VARCHAR(45),
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+-- =========================
+-- REFRESH TOKENS
+-- =========================
+
+CREATE TABLE refresh_tokens (
+
+    id SERIAL PRIMARY KEY,
+
+    employee_id INTEGER NOT NULL
+        REFERENCES employees(id)
+        ON DELETE CASCADE,
+
+
+    token_hash VARCHAR(128) UNIQUE NOT NULL,
+
+
+    expires_at TIMESTAMP NOT NULL,
+
+
+    revoked BOOLEAN DEFAULT FALSE,
+
+
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+
+
+CREATE INDEX idx_refresh_employee
+ON refresh_tokens(employee_id);
+
+
+
+-- =========================
+-- SETTINGS
+-- =========================
+
+CREATE TABLE settings (
+    id SERIAL PRIMARY KEY,
+    key VARCHAR(50) UNIQUE NOT NULL,
+    value VARCHAR(255)
+);
