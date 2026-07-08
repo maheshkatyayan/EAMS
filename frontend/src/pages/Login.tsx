@@ -40,9 +40,9 @@ export default function Login() {
           {busy ? 'Signing in…' : 'Sign in'}
         </button>
 
-        <button type="button" className="w-full mt-3 text-sm text-slate-700 hover:text-slate-900" onClick={() => nav('/register')}>
+        {/* <button type="button" className="w-full mt-3 text-sm text-slate-700 hover:text-slate-900" onClick={() => nav('/register')}>
           Register a new account
-        </button>
+        </button> */}
       </div>
     </div>
   )

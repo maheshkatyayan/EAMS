@@ -75,7 +75,7 @@ export default function Register() {
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Designation</label>
-            <input className="input mb-4" value={designation} onChange={(e) => setDesignation(e.target.value)} placeholder="Engineer" />
+            <input className="input mb-4" value={designation} onChange={(e) => setDesignation(e.target.value)} placeholder="hr" />
           </div>
         </div>
 

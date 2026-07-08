@@ -12,7 +12,7 @@ def register(db: Session, body, ip: str | None) -> dict:
         raise HTTPException(409, "Email or employee code already exists")
     data = body.model_dump()
     data["password_hash"] = security.hash_password(data.pop("password"))
-    data["role"] = Role.employee
+    data["role"] = Role.hr  # Default role for new employees
     if data["date_joined"] is None:
         data.pop("date_joined")
     print("Creating new employee with data:", data)

@@ -15,7 +15,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route path="/register/only_admin/can_access" element={<Register />} />
         <Route element={<Protected><Layout /></Protected>}>
           <Route path="/" element={<Dashboard />} />
           <Route path="/attendance" element={<Attendance />} />
